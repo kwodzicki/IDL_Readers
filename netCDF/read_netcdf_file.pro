@@ -148,11 +148,11 @@ FOR i = 0, N_ELEMENTS(var_ids)-1 DO BEGIN                                       
       juldate = GREG2JUL(yymmdd[1], yymmdd[2], yymmdd[0], $
                            hrmnsec[0],hrmnsec[1],hrmnsec[2]) + new_data
 ;           ENDIF ELSE juldate = GREG2JUL(1, 1, 1900, 0, 0, 0) + data/24.0      ; Convert the gregorian reference date to a julian date and add the fractional julian days to it
-      IF KEYWORD_SET(scale_data) THEN data = juldate                            ; If the scale_data keyword is set, then set data to the julian date values
     ENDIF ELSE juldate = data                                                   ; Assume the time is in IDL Juldate format
     JUL2GREG, juldate, mm, dd, yy,  hr, mn, sc                                  ; Convert the julian date back to the gregorian date
     var_data = CREATE_STRUCT(var_data, $                                        ; Append the year, month, day, hour, min, sec information to the variable's structure
-            'YEAR',   yy, $
+            'JULDAY', juldate, $
+    	    'YEAR',   yy, $
             'MONTH',  mm, $
             'DAY',    dd, $
             'HOUR',   hr, $
