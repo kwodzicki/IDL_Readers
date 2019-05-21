@@ -131,13 +131,13 @@ FOR i = 0, N_ELEMENTS(var_ids)-1 DO BEGIN                                       
   NCDF_VARGET, iid, var_id, data                                                ; Get data from variable
   ;=== Get year, month, day, hour for time
   IF (STRUPCASE(var_data.NAME) EQ 'TIME') THEN BEGIN                            ; If the variable name is TIME
-    tags = TAG_NAMES(var_data)                                                                                      ; Get the names of the attributes associated with time
+    tags = TAG_NAMES(var_data)                                                  ; Get the names of the attributes associated with time
     IF TOTAL(STRMATCH(tags, 'units', /FOLD_CASE), /INT) EQ 1 THEN BEGIN         ; Determine index of the units attribute of the time variable
-      tmp = STRSPLIT(var_data.UNITS, ' ', /EXTRACT)                                                         ; Get the time units
+      tmp = STRSPLIT(var_data.UNITS, ' ', /EXTRACT)                             ; Get the time units
       CASE STRLOWCASE(tmp[0]) OF
-        'hours'   : new_data = data/24.0                                                                              ; If the units are hours since
-        'minutes' : new_data = data/1440.0                                                                        ; If the units are mintues since
-        'seconds' : new_data = data/86400.0                                                                       ; If the units are seconds since
+        'hours'   : new_data = data / 0.24000D2                                 ; If the units are hours since
+        'minutes' : new_data = data / 0.14400D4                                 ; If the units are mintues since
+        'seconds' : new_data = data / 0.86400D5                                 ; If the units are seconds since
         ELSE      : BEGIN
                       PRINT, 'Assuming time units are days since'               ; Else, print message
                       new_data = data
@@ -148,6 +148,7 @@ FOR i = 0, N_ELEMENTS(var_ids)-1 DO BEGIN                                       
       juldate = GREG2JUL(yymmdd[1], yymmdd[2], yymmdd[0], $
                            hrmnsec[0],hrmnsec[1],hrmnsec[2]) + new_data
 ;           ENDIF ELSE juldate = GREG2JUL(1, 1, 1900, 0, 0, 0) + data/24.0      ; Convert the gregorian reference date to a julian date and add the fractional julian days to it
+      IF KEYWORD_SET(scale_data) THEN data = juldate                            ; If the scale_data keyword is set, then set data to the julian date values
     ENDIF ELSE juldate = data                                                   ; Assume the time is in IDL Juldate format
     JUL2GREG, juldate, mm, dd, yy,  hr, mn, sc                                  ; Convert the julian date back to the gregorian date
     var_data = CREATE_STRUCT(var_data, $                                        ; Append the year, month, day, hour, min, sec information to the variable's structure

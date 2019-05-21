@@ -62,7 +62,7 @@ endif else begin
     print, 'ERROR OPENING FILE: ', filename
   endif else begin
     readu, file_ID, byte_data
-    close, file_ID
+    free_lun, file_ID
   endelse
 
   ; to decode byte data to real data
