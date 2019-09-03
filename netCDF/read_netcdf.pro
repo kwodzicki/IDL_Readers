@@ -1,10 +1,11 @@
 FUNCTION READ_netCDF, fname, $
-  LIMIT     = limit, $
-  VARIABLES = variables,$
-  FLOAT     = float, $
-  ADD_FIRST = add_first, $
-  VERBOSE   = verbose, $
-  SILENT    = silent
+  LIMIT      = limit, $
+  VARIABLES  = variables,$
+  FLOAT      = float, $
+  SCALE_DATA = scale_data, $
+  ADD_FIRST  = add_first, $
+  VERBOSE    = verbose, $
+  SILENT     = silent
 
 ;+
 ; Name:
@@ -48,6 +49,7 @@ IF KEYWORD_SET(verbose) THEN BEGIN                                              
     PRINT, '   ', fname
     PRINT, ''
 ENDIF
+IF N_ELEMENTS(scale_data) EQ 0 THEN scale_data = 1
 
 data         = {}                                                               ; Initialize empty structure to store all data in
 all_var_info = {}                                                               ; Initialize empty structure to store all variable info in
@@ -145,60 +147,62 @@ FOR i = 0, N_TAGS(all_var_info)-1 DO BEGIN                                      
     IF N_ELEMENTS(fill) NE 0 THEN fill = STRING(fill)                           ; If there is a fill value, then convert the fill value to a string
   ENDIF
 
-  replace_id = []
-  ;=== Check for fill values
-  IF (N_ELEMENTS(fill) NE 0) THEN BEGIN
-    id = WHERE(result EQ fill, CNT)
-    IF (CNT GT 0) THEN replace_id = [replace_id, id]
-    fill = !NULL
-  ENDIF
-
-  IF (N_ELEMENTS(missing) NE 0) THEN BEGIN
-    id = WHERE(result EQ missing, CNT)
-    IF (CNT GT 0) THEN replace_id = [replace_id, id]
-    missing = !NULL
-  ENDIF
-
-  IF (N_ELEMENTS(range) EQ 2) THEN BEGIN
-    id = WHERE(result LT range[0] OR result GT range[1], CNT)
-    IF (CNT GT 0) THEN replace_id = [replace_id, id]
-    range    = !NULL
-  ENDIF
-
-  ;=== Data scaling
- IF KEYWORD_SET(add_first) THEN BEGIN
-    ;=== Offset the data IF an offset was read in
-    IF (N_ELEMENTS(offset) EQ 1) THEN BEGIN
-      IF KEYWORD_SET(float) THEN offset = FLOAT(offset)
-      result = TEMPORARY(result) - offset
-      offset = !NULL
+  IF KEYWORD_SET(scale_data) THEN BEGIN
+    replace_id = []
+    ;=== Check for fill values
+    IF (N_ELEMENTS(fill) NE 0) THEN BEGIN
+      id = WHERE(result EQ fill, CNT)
+      IF (CNT GT 0) THEN replace_id = [replace_id, id]
+      fill = !NULL
     ENDIF
-    ;=== Scale the data IF a scale factor was read in
-    IF (N_ELEMENTS(scale) EQ 1) THEN BEGIN
-      IF KEYWORD_SET(float) THEN scale = FLOAT(scale)
-      result = TEMPORARY(result) * scale
-      scale  = !NULL
-    ENDIF
-  ENDIF ELSE BEGIN
-    ;=== Scale the data IF a scale factor was read in
-    IF (N_ELEMENTS(scale) EQ 1) THEN BEGIN
-      IF KEYWORD_SET(float) THEN scale = FLOAT(scale)
-      result = TEMPORARY(result) * scale
-      scale  = !NULL
-    ENDIF
-    ;=== Offset the data IF an offset was read in
-    IF (N_ELEMENTS(offset) EQ 1) THEN BEGIN
-      IF KEYWORD_SET(float) THEN offset = FLOAT(offset)
-      result = TEMPORARY(result) + offset
-      offset = !NULL
-    ENDIF
-  ENDELSE
 
-  ;=== Replace invalid data if any present
-  IF (N_ELEMENTS(replace_id) GT 0) THEN BEGIN
-    type = SIZE(result, /TYPE)
-    IF (type NE 4) AND (type NE 5) THEN result = FLOAT(result)
-    result[replace_id] = !Values.F_NaN
+    IF (N_ELEMENTS(missing) NE 0) THEN BEGIN
+      id = WHERE(result EQ missing, CNT)
+      IF (CNT GT 0) THEN replace_id = [replace_id, id]
+      missing = !NULL
+    ENDIF
+
+    IF (N_ELEMENTS(range) EQ 2) THEN BEGIN
+      id = WHERE(result LT range[0] OR result GT range[1], CNT)
+      IF (CNT GT 0) THEN replace_id = [replace_id, id]
+      range    = !NULL
+    ENDIF
+
+    ;=== Data scaling
+    IF KEYWORD_SET(add_first) THEN BEGIN
+      ;=== Offset the data IF an offset was read in
+      IF (N_ELEMENTS(offset) EQ 1) THEN BEGIN
+        IF KEYWORD_SET(float) THEN offset = FLOAT(offset)
+        result = TEMPORARY(result) - offset
+        offset = !NULL
+      ENDIF
+      ;=== Scale the data IF a scale factor was read in
+      IF (N_ELEMENTS(scale) EQ 1) THEN BEGIN
+        IF KEYWORD_SET(float) THEN scale = FLOAT(scale)
+        result = TEMPORARY(result) * scale
+        scale  = !NULL
+      ENDIF
+    ENDIF ELSE BEGIN
+      ;=== Scale the data IF a scale factor was read in
+      IF (N_ELEMENTS(scale) EQ 1) THEN BEGIN
+        IF KEYWORD_SET(float) THEN scale = FLOAT(scale)
+        result = TEMPORARY(result) * scale
+        scale  = !NULL
+      ENDIF
+      ;=== Offset the data IF an offset was read in
+      IF (N_ELEMENTS(offset) EQ 1) THEN BEGIN
+        IF KEYWORD_SET(float) THEN offset = FLOAT(offset)
+        result = TEMPORARY(result) + offset
+        offset = !NULL
+      ENDIF
+    ENDELSE
+
+    ;=== Replace invalid data if any present
+    IF (N_ELEMENTS(replace_id) GT 0) THEN BEGIN
+      type = SIZE(result, /TYPE)
+      IF (type NE 4) AND (type NE 5) THEN result = FLOAT(result)
+      result[replace_id] = !Values.F_NaN
+    ENDIF
   ENDIF
 
   IF KEYWORD_SET(float) AND SIZE(result, /TYPE) EQ 5 THEN $                     ; If the float keyword IS set and the data type of result IS double, force to float

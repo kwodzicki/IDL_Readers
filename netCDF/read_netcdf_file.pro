@@ -114,7 +114,8 @@ FOR i = 0, N_ELEMENTS(var_ids)-1 DO BEGIN                                       
     attInfo = NCDF_ATTINQ(iid,  var_id, attName)                                ; Get the DataType and length of the attribute. String attributes must be converted, need this to determine if string.
     NCDF_ATTGET, iid, var_id, attName, attData                                  ; Get the data for the attribute
     IF (attInfo.DataType EQ 'CHAR') THEN attData = STRING(attData)              ; If the attribute is of type CHAR, then convert the attribute data to a string
-    var_data = CREATE_STRUCT(var_data, attName, attData)                        ; Append the attribute data to the var_data structure
+    IF TOTAL(STRMATCH(TAG_NAMES(var_data), attName, /FOLD_CASE), /INT) EQ 0 THEN $
+      var_data = CREATE_STRUCT(var_data, attName, attData)                        ; Append the attribute data to the var_data structure
 
     IF KEYWORD_SET(scale_data) THEN BEGIN                                       ; If the SCALE_DATA keyword is set, save some information needed to scale the data later
       IF STRMATCH(attName, '*FillValue', /FOLD_CASE) THEN $
