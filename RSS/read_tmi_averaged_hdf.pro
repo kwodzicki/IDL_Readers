@@ -1,4 +1,4 @@
-FUNCTION READ_TMI_AVERAGED_HDF_V1, filename, $
+FUNCTION READ_TMI_AVERAGED_HDF, filename, $
 				PARAMETERS=parameters, $
 				NO_LAND   =no_land, $
 				LIMIT     =limit

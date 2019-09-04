@@ -1,4 +1,4 @@
-FUNCTION READ_RSS_MWR_AVERAGED_V2, filename, $
+FUNCTION READ_RSS_MWR_AVERAGED_KRW, filename, $
   RRDAY  = rrday, $
   NO_GoM = no_gom
 

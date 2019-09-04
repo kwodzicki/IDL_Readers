@@ -1,4 +1,4 @@
-FUNCTION READ_RSS_MWR_DAY_V2, filename, $
+FUNCTION READ_RSS_MWR_DAY_KRW, filename, $
   NO_GoM = no_gom, $
   RR_DAY = rr_day
 

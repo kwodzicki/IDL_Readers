@@ -1,4 +1,4 @@
-FUNCTION READ_NEWS_PMWC_V2, filename
+FUNCTION READ_NEWS_PMWC_KRW, filename
 
 ;     this routine reads version-01 NEWS Passive Microwave Water Cycle (PMWC) data files
 ;     please contact Kyle Hilburn (hilburn@remss.com) with any questions or concerns
@@ -36,20 +36,28 @@ FUNCTION READ_NEWS_PMWC_V2, filename
 ; Modified by Kyle R. Wodzicki 15 Jan. 2015 - Changed to function.
 ;-
 
-wvtu=REPLICATE(-999.0, 1440, 720)
-wvtv=REPLICATE(-999.0, 1440, 720)
-wvtd=REPLICATE(-999.0, 1440, 720)
-evap=REPLICATE(-999.0, 1440, 720)
-prcp=REPLICATE(-999.0, 1440, 720)
-wvap=REPLICATE(-999.0, 1440, 720)
+nx      = 1440
+ny      =  720
+nvar    =    6
+dxy     =    0.25
+xOffset =    0.125
+yOffset =   90.125
+fill    = -999.0
 
-exist=FINDFILE(filename,count=cnt)
+wvtu    = MAKE_ARRAY(nx, ny, VALUE = fill)
+wvtv    = MAKE_ARRAY(nx, ny, VALUE = fill)
+wvtd    = MAKE_ARRAY(nx, ny, VALUE = fill)
+evap    = MAKE_ARRAY(nx, ny, VALUE = fill)
+prcp    = MAKE_ARRAY(nx, ny, VALUE = fill)
+wvap    = MAKE_ARRAY(nx, ny, VALUE = fill)
+
+exist   = FINDFILE(filename, COUNT = cnt)
 IF (cnt NE 1) THEN BEGIN
     PRINT,'FILE DOES NOT EXIST  or  MORE THAN ONE FILE EXISTS: ', filename
     RETURN, -1
 ENDIF
 
-abuf=BYTARR(1440,720,6)
+abuf=BYTARR(nx, ny, nvar)
 CLOSE,2
 OPENR,2,filename,error=err,/compress  ;compress keyword allows reading of gzip file, remove if data already unzipped
 IF (err GT 0) THEN BEGIN
@@ -59,27 +67,27 @@ ENDIF
 READU,2,abuf
 CLOSE,2
 
-wspd=REFORM(abuf[*,*,0])
-wdir=REFORM(abuf[*,*,1])  ;oceanographic convention
-wvtu=(2.4 * wspd) * SIN((1.5 * wdir) * !DTOR)
-wvtv=(2.4 * wspd) * COS((1.5 * wdir) * !DTOR)
-wvtd=REFORM(abuf[*,*,2]) * 0.024 - 3.0
-evap=REFORM(abuf[*,*,3]) * 0.003
-prcp=REFORM(abuf[*,*,4]) * 0.012
-wvap=REFORM(abuf[*,*,5]) * 0.3
+wspd = REFORM(abuf[*,*,0])
+wdir = REFORM(abuf[*,*,1])  ;oceanographic convention
+wvtu = (2.4 * wspd) * SIN((1.5 * wdir) * !DTOR)
+wvtv = (2.4 * wspd) * COS((1.5 * wdir) * !DTOR)
+wvtd = REFORM(abuf[*,*,2]) * 0.024 - 3.0
+evap = REFORM(abuf[*,*,3]) * 0.003
+prcp = REFORM(abuf[*,*,4]) * 0.012
+wvap = REFORM(abuf[*,*,5]) * 0.3
 
-ibad=WHERE(wspd GT 250, nbad)
+ibad = WHERE(wspd GT 250, nbad)
 IF (nbad GT 0) THEN BEGIN
-    wvtu[ibad]=!VALUES.F_NaN
-    wvtv[ibad]=!VALUES.F_NaN
-    wvtd[ibad]=!VALUES.F_NaN
-    evap[ibad]=!VALUES.F_NaN
-    prcp[ibad]=!VALUES.F_NaN
-    wvap[ibad]=!VALUES.F_NaN
+    wvtu[ibad] = !VALUES.F_NaN
+    wvtv[ibad] = !VALUES.F_NaN
+    wvtd[ibad] = !VALUES.F_NaN
+    evap[ibad] = !VALUES.F_NaN
+    prcp[ibad] = !VALUES.F_NaN
+    wvap[ibad] = !VALUES.F_NaN
 ENDIF
 
-RETURN, {LON   : 0.25*(FINDGEN(1440)+1)- 0.125, $
-         LAT   : 0.25*(FINDGEN(720) +1)-90.125, $
+RETURN, {LON   : dxy * (FINDGEN(nx)+1) - xOffset, $
+         LAT   : dxy * (FINDGEN(ny)+1) - yOffset, $
          WVT_U : wvtu, $
          WVT_V : wvtv, $
          WVT_D : wvtd, $

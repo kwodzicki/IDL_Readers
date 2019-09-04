@@ -1,4 +1,4 @@
-FUNCTION READ_TMI_RUN_MEAN_V1, filename, $
+FUNCTION READ_TMI_RUN_MEAN, filename, $
 					PARAMETERS=parameters, $
 					NO_GOM		=no_gom, $
 					LIMITS		=limits, $

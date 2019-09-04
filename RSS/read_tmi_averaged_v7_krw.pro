@@ -1,10 +1,10 @@
-FUNCTION READ_TMI_AVERAGED_V7_2, filename, $
-					PARAMETERS=parameters, $
-					NO_LAND		=no_land, $
-					NO_GOM		=no_gom, $
-					LIMIT 		=limit, $
-					RRDAY			=rrday
-
+FUNCTION READ_TMI_AVERAGED_V7_KRW, filename, $
+		VARIABLES	= variables, $
+		NO_LAND		= no_land, $
+		NO_GOM		= no_gom, $
+		LIMIT			= limit, $
+		RRDAY			= rrday
+;+
 ; this routine will read the TMI time_averaged bytemap files (version-7.1 released January 2015).
 ; The  3-day, weekly and monthly data files all have the same format.
 
@@ -37,33 +37,44 @@ FUNCTION READ_TMI_AVERAGED_V7_2, filename, $
 ; for infomation on the various fields, or contact
 ; support@remss.com with questions about the data.
 ;
-
-;binary data in file
-binary = BYTARR(1440,720,6)
-
+;-
 
 ;determine if file exists
-exist = FINDFILE(filename,COUNT=cnt)
+exist = FINDFILE(filename, COUNT=cnt)
 IF (cnt NE 1) THEN $
 	MESSAGE, 'FILE DOES NOT EXIST or MORE THAN ONE FILE EXISTS!!'
+
+nx      = 1440
+ny      =  720
+nvars   =    6
+dxy     =    0.25
+xOffset =    0.125
+yOffset =   90.125
+binary  = BYTARR(nx, ny, nvars)
+
+; multipliers to change binary data to real data
+xscale  = [ 0.15, 0.2, 0.2, 0.3,  0.01, 0.1]
+xoffset = [-3.00, 0.0, 0.0, 0.0, -0.05, 0.0]
 
 ;open file, read binary data, close file
 CLOSE, 2
 OPENR, 2, filename, ERROR=err, COMPRESS=STRMATCH(filename, '*.gz', /FOLD_CASE)  ;compress keyword allows reading of gzip file, do not use if file is unzipped
-IF (err GT 0) THEN BEGIN
-	PRINT, 'ERROR OPENING FILE: ', filename
-ENDIF ELSE BEGIN
+IF (err GT 0) THEN $
+	PRINT, 'ERROR OPENING FILE: ', filename $
+ELSE BEGIN
 	READU, 2, binary
 	CLOSE, 2
 ENDELSE
 
-; multipliers to change binary data to real data
-xscale =[0.15, 0.2, 0.2, 0.3, 0.01, 0.1]
-xoffset=[-3.0, 0.0, 0.0, 0.0, -0.05, 0.0]
+IF N_ELEMENTS(variables) EQ 0 THEN $
+ 	variables = ['SST', 'W11', 'W37', 'VAPOR', 'CLOUD', 'RAIN'] $
+ELSE $
+	FOR i = 0, N_ELEMENTS(variables[i])-1 DO $
+		variables[i] = STRUPCASE(variables[i])
 
 ;Create latitude and longitude and shift
-lon = 0.25*(FINDGEN(1440)+1) - 0.125
-lat = 0.25*(FINDGEN(720) +1) -90.125
+lon = dxy * (FINDGEN(nx)+1) - xOffset
+lat = dxy * (FINDGEN(ny)+1) - yOffset
 
 IF N_ELEMENTS(limit) GT 0 THEN BEGIN
 	IF (limit[3] LT 0) THEN limit[3]=limit[3]+360.0											;Convert to 360 degree not -180 to 180
@@ -77,19 +88,19 @@ ENDIF ELSE BEGIN
 	lat_CNT = 0
 ENDELSE
 
-IF (lon_CNT GT 0 AND lon_CNT LT 1440) THEN BEGIN											;IF are points to filter by but less than all points
+IF (lon_CNT GT 0) AND (lon_CNT LT nx) THEN BEGIN											;IF are points to filter by but less than all points
   binary = binary[lon_id,*,*]
   lon    = lon[lon_id]
 ENDIF
-IF (lat_CNT GT 0 AND lat_CNT LT 720) THEN BEGIN												;IF are points to filter by but less than all points)
+IF (lat_CNT GT 0) AND (lat_CNT LT ny) THEN BEGIN												;IF are points to filter by but less than all points)
   binary = binary[*,lat_id,*]
   lat    = lat[lat_id]
 ENDIF
 
 nLon = N_ELEMENTS(lon)
 nLat = N_ELEMENTS(lat)
-lon = REBIN(lon, nLon, nLat)														        								;Rebin to 1440 X 320 array
-lat = REBIN(REFORM(lat, 1, nLat), nLon, nLat)										    						;Rebin to 1440 X 320 array
+lon  = REBIN(lon, nLon, nLat)														        								;Rebin to 1440 X 320 array
+lat  = REBIN(REFORM(lat, 1, nLat), nLon, nLat)										    						;Rebin to 1440 X 320 array
 
 IF KEYWORD_SET(no_land) THEN $
   land_cnt = 0 $
@@ -108,19 +119,16 @@ IF KEYWORD_SET(rrday) THEN binary[*,*,-1] *= 24
 
 IF land_CNT GT 0 THEN binary[land] = 255.0
 
-
-IF N_ELEMENTS(parameters) EQ 0 THEN $
-  parameters = ['SST', 'W11', 'W37', 'VAPOR', 'CLOUD', 'RAIN']
 out_data = {}																									       			;Initialize out_data Struct
-FOR i = 0, N_ELEMENTS(parameters)-1 DO $												     ;Iterate over parameters
-	CASE STRUPCASE(parameters[i]) OF											
-		'SST'		: out_data = CREATE_STRUCT(out_data, 'SST',   binary[*,*,0])
-		'W11'		: out_data = CREATE_STRUCT(out_data, 'W11',   binary[*,*,1])
-		'W37'		: out_data = CREATE_STRUCT(out_data, 'W37',   binary[*,*,2])
-		'VAPOR'	: out_data = CREATE_STRUCT(out_data, 'VAPOR', binary[*,*,3])
-		'CLOUD'	: out_data = CREATE_STRUCT(out_data, 'CLOUD', binary[*,*,4])
-		'RAIN'	: out_data = CREATE_STRUCT(out_data, 'RAIN',  binary[*,*,5])
-		ELSE	: MESSAGE, 'Input parameters(s) INVALID!'
+FOR i = 0, N_ELEMENTS(variables)-1 DO $												     ;Iterate over variables
+	CASE variables[i] OF											
+		'SST'		: out_data = CREATE_STRUCT(out_data, variables[i], binary[*,*,0])
+		'W11'		: out_data = CREATE_STRUCT(out_data, variables[i], binary[*,*,1])
+		'W37'		: out_data = CREATE_STRUCT(out_data, variables[i], binary[*,*,2])
+		'VAPOR'	: out_data = CREATE_STRUCT(out_data, variables[i], binary[*,*,3])
+		'CLOUD'	: out_data = CREATE_STRUCT(out_data, variables[i], binary[*,*,4])
+		'RAIN'	: out_data = CREATE_STRUCT(out_data, variables[i], binary[*,*,5])
+		ELSE	: MESSAGE, 'Input variables(s) INVALID!'
 	ENDCASE
 	
 

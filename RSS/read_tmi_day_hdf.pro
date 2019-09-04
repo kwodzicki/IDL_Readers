@@ -1,4 +1,4 @@
-FUNCTION READ_TMI_DAY_HDF_V1, filename
+FUNCTION READ_TMI_DAY_HDF, filename
 
 ;+
 ; Name:

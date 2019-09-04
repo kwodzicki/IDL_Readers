@@ -1,4 +1,4 @@
-FUNCTION READ_WINDSAT_AVERAGED, file_name, $
+FUNCTION READ_WINDSAT_AVERAGED_V7_KRW, file_name, $
 					PARAMETERS=parameters, $
 					NO_LAND		=no_land, $
 					NO_GOM		=no_gom, $
@@ -60,7 +60,7 @@ FUNCTION READ_WINDSAT_AVERAGED, file_name, $
 ;
 ; To contact RSS support:
 ; http://www.remss.com/support
-
+;-
 
 
 ;binary data in file
