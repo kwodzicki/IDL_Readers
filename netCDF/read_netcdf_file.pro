@@ -111,6 +111,9 @@ FUNCTION LOCAL_READ_NETCDF_GROUP, iid, $
 	ELSE $
 	  var_ids = []
 
+	IF N_ELEMENTS(var_ids) > 1 THEN $															;If there is more than one (1) element in the array
+		var_ids = var_ids[ UNIQ(var_ids, SORT(var_ids) ) ]									;Subset by only unique variable IDs
+
 	FOR i = 0, N_ELEMENTS(var_ids)-1 DO BEGIN                                     ; Iterate over all variable indices in the var_ids array
 		var_id   = var_ids[i]                                                       ; Get the ith variable index
 		var_data = NCDF_VARINQ(iid, var_id)
@@ -272,7 +275,6 @@ out_data = LOCAL_READ_NETCDF_GROUP(iid, $                                     ; 
 	
 ngids = 0                                                                     ; Set number of group ids to zero by default
 gids  = LIST( NCDF_GROUPSINQ(iid) )                                           ; Get list of group ids in file
-STOP
 
 IF SIZE(gids[0], /N_DIMENSIONS) EQ 0 THEN $                                   ; If NO groups are found
 	out_data = CREATE_STRUCT(out_data, 'groups', 0) $                           ; Append groups tag to out data array with value of zero (0)
