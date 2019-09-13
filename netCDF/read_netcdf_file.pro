@@ -111,7 +111,7 @@ FUNCTION LOCAL_READ_NETCDF_GROUP, iid, $
 	ELSE $
 	  var_ids = []
 
-	IF N_ELEMENTS(var_ids) > 1 THEN $															;If there is more than one (1) element in the array
+	IF N_ELEMENTS(var_ids) GT 1 THEN $															;If there is more than one (1) element in the array
 		var_ids = var_ids[ UNIQ(var_ids, SORT(var_ids) ) ]									;Subset by only unique variable IDs
 
 	FOR i = 0, N_ELEMENTS(var_ids)-1 DO BEGIN                                     ; Iterate over all variable indices in the var_ids array
