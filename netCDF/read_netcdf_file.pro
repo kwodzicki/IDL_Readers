@@ -139,7 +139,7 @@ FUNCTION LOCAL_READ_NETCDF_GROUP, iid, $
 		ENDFOR                                                                      ; END j		
 	
 		NCDF_VARGET, iid, var_id, data                                              ; Get data from variable
-	
+		var_data = CREATE_STRUCT(var_data, 'n', SIZE(data, /DIMENSIONS) )	
 		;=== Get year, month, day, hour for time
 		IF (STRUPCASE(var_data.NAME) EQ 'TIME') THEN BEGIN                          ; If the variable name is TIME
 			tags = TAG_NAMES(var_data)																			          ; Get the names of the attributes associated with time
