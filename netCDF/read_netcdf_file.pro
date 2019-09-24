@@ -1,6 +1,7 @@
 FUNCTION LOCAL_READ_NETCDF_GROUP, iid, $
   VARIABLES  = variables,  $
   SCALE_DATA = scale_data, $
+  ADD_FIRST  = add_first,  $
   FLOAT      = float,      $
   DIMID      = dimID,      $
   IID_INFO   = iid_info
@@ -184,18 +185,34 @@ FUNCTION LOCAL_READ_NETCDF_GROUP, iid, $
 				range    = !NULL
 			ENDIF
 
-			;=== Scale the data IF a scale factor was read in
-			IF (N_ELEMENTS(scale) EQ 1) THEN BEGIN
-				IF KEYWORD_SET(float) THEN scale = FLOAT(scale)
-				data = TEMPORARY(data) * scale
-				scale  = !NULL
-			ENDIF
-			;=== Offset the data IF an offset was read in
-			IF (N_ELEMENTS(offset) EQ 1) THEN BEGIN
-				IF KEYWORD_SET(float) THEN offset = FLOAT(offset)
-				data = TEMPORARY(data) + offset
-				offset = !NULL
-			ENDIF
+
+			IF KEYWORD_SET(add_first) THEN BEGIN
+				;=== Offset the data IF an offset was read in
+				IF (N_ELEMENTS(offset) EQ 1) THEN BEGIN
+					IF KEYWORD_SET(float) THEN offset = FLOAT(offset)
+					data = TEMPORARY(data) - offset
+					offset = !NULL
+				ENDIF
+				;=== Scale the data IF a scale factor was read in
+				IF (N_ELEMENTS(scale) EQ 1) THEN BEGIN
+					IF KEYWORD_SET(float) THEN scale = FLOAT(scale)
+					data = TEMPORARY(data) * scale
+					scale  = !NULL
+				ENDIF
+			ENDIF ELSE BEGIN
+				;=== Scale the data IF a scale factor was read in
+				IF (N_ELEMENTS(scale) EQ 1) THEN BEGIN
+					IF KEYWORD_SET(float) THEN scale = FLOAT(scale)
+					data = TEMPORARY(data) * scale
+					scale  = !NULL
+				ENDIF
+				;=== Offset the data IF an offset was read in
+				IF (N_ELEMENTS(offset) EQ 1) THEN BEGIN
+					IF KEYWORD_SET(float) THEN offset = FLOAT(offset)
+					data = TEMPORARY(data) + offset
+					offset = !NULL
+				ENDIF
+			ENDELSE
 
 			;=== Replace invalid data if any present
 			IF (N_ELEMENTS(replace_id) GT 0) THEN BEGIN
@@ -216,6 +233,7 @@ END
 FUNCTION READ_netCDF_FILE, fname, $
   VARIABLES  = variables, $
   SCALE_DATA = scale_data, $
+  ADD_FIRST  = add_first, $
   FLOAT      = float, $
   IID        = iid_in
 ;+
@@ -271,6 +289,7 @@ fileInfo = NCDF_INQUIRE(iid)																		;Get information about the file
 out_data = LOCAL_READ_NETCDF_GROUP(iid, $                                     ; Get information from the netCDF file
 	VARIABLES  = variables, $
 	SCALE_DATA = scale_data, $
+	ADD_FIRST  = add_first, $
 	FLOAT      = float)
 	
 ngids = 0                                                                     ; Set number of group ids to zero by default
