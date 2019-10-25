@@ -217,7 +217,7 @@ FUNCTION LOCAL_READ_NETCDF_GROUP, iid, $
 			;=== Replace invalid data if any present
 			IF (N_ELEMENTS(replace_id) GT 0) THEN BEGIN
 				type = SIZE(data, /TYPE)
-				IF (type EQ 4) OR (type EQ 5) THEN data = FLOAT(data)
+				IF ((type LT 4) OR (type GT 6)) AND (type NE 9) THEN data = FLOAT(data)
 				data[replace_id] = !Values.F_NaN
 			ENDIF 
 		ENDIF
