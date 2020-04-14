@@ -39,6 +39,8 @@ IF FILE_TEST(filename[0]) EQ 0 THEN $
   IF NOT STRMATCH(filename[0], '*http*', /FOLD_CASE) THEN $                     ; Check if NOT URL
     MESSAGE, 'FILE NOT FOUND!'                                                  ; Error if file NOT exist
 
+IF N_ELEMENTS(scale_data) EQ 0 THEN scale_data = 1
+
 ;out_data = {filename: filename}                                                ; Store file name in structure
 out_data = { }                                                                  ; Store file name in structure
 splt     = '!@#$%^&*+=;:,./?()[]{}<>'                                           ; Characters not allowed in structure tags

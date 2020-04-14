@@ -23,7 +23,7 @@ FUNCTION READ_MEI_DATA, start_date, end_date
 ;-
   COMPILE_OPT IDL2
 
-  data = READ_ASCII('/Volumes/Data_Rapp/Wodzicki/ENSO/MEI_Data.txt')
+  data = READ_ASCII('/Volumes/flood3/MEI_Data.txt')
   dims = SIZE(data.(0), /DIMENSIONS)
 
   mei = [] & year = [] & month = []

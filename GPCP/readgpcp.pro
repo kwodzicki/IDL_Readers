@@ -67,7 +67,12 @@ COMPILE_OPT IDL2, HIDDEN
 END
 
 FUNCTION READGPCP, in_year, in_month, $
-  LIMIT=limit, DIR=dir, VERBOSE=verbose, HEADER=info, NO_LAND = no_land
+  VERSION = version, $
+  LIMIT   = limit, $
+  DIR     = dir, $
+  VERBOSE = verbose, $
+  HEADER  = info, $
+  NO_LAND = no_land
 ;+
 ; Name:
 ;   READGPCP
@@ -111,14 +116,19 @@ FUNCTION READGPCP, in_year, in_month, $
 ;-
 
 COMPILE_OPT IDL2                                                      ;Set compile options
-	
-IF (N_ELEMENTS(dir) EQ 0) THEN $                                      ;Set default directory for data
-  dir = '/Volumes/Data_Rapp/GPCP/V2.2/Yearly'
+
+IF (N_ELEMENTS(version) EQ 0) THEN version = 'V2.3'	
+IF (N_ELEMENTS(dir)     EQ 0) THEN dir = FILEPATH(version, ROOT_DIR=!GPCP_Data);Set default directory for data
   
-nlat   = 72                                                           ;Number of latitude points
-nlon   = 144                                                          ;Number of longitude points
-latbins= REVERSE(FINDGEN(nlat) * 2.5 - 88.75)                         ;Latitude points for data
-lonbins= FINDGEN(nlon) * 2.5 + 1.25                                   ;Longitude points for data
+nLat      =  72                                                          ;Number of latitude points
+nLon      = 144                                                          ;Number of longitude points
+dLat      =   2.5
+dLon      =   2.5
+latOffset = -88.75
+lonOffset =   1.25
+
+latbins   = REVERSE( FINDGEN(nLat) * dLat + latOffset )                       ; Latitude points for data
+lonbins   =          FINDGEN(nLon) * dLon + lonOffset                         ; Longitude points for data
   
 IF (N_ELEMENTS(limit) NE 0) THEN BEGIN                                ;If limits set, filter data based on domain
   lon_id = WHERE(lonbins GE limit[1] AND lonbins LE limit[3], lon_CNT)

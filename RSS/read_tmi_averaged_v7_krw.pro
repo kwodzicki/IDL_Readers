@@ -53,8 +53,8 @@ yOffset =   90.125
 binary  = BYTARR(nx, ny, nvars)
 
 ; multipliers to change binary data to real data
-xscale  = [ 0.15, 0.2, 0.2, 0.3,  0.01, 0.1]
-xoffset = [-3.00, 0.0, 0.0, 0.0, -0.05, 0.0]
+scale  = [ 0.15, 0.2, 0.2, 0.3,  0.01, 0.1]
+offset = [-3.00, 0.0, 0.0, 0.0, -0.05, 0.0]
 
 ;open file, read binary data, close file
 CLOSE, 2
@@ -114,7 +114,7 @@ ELSE $
 
 binary = FLOAT(binary)                                                          ; Convert binary to float
 IF bad_CNT GT 0 THEN binary[bad] = !VALUES.F_NaN											          ; Replace bad values with NaN
-FOR i = 0, 5 DO binary[0,0,i] = binary[*,*,i] * xscale[i] + xoffset[i]
+FOR i = 0, 5 DO binary[0,0,i] = binary[*,*,i] * scale[i] + offset[i]
 IF KEYWORD_SET(rrday) THEN binary[*,*,-1] *= 24
 
 IF land_CNT GT 0 THEN binary[land] = 255.0
