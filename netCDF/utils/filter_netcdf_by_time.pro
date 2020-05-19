@@ -33,9 +33,12 @@ IF N_ELEMENTS(ids) EQ 0 THEN BEGIN																						; If no values in ids
 ENDIF
 
 isStruct = ISA(data, 'STRUCT')																								; Test for data is structure
-IF isStruct EQ 1 THEN data = DICTIONARY(data, /EXTRACT)												; If structure, convert to dictionary
+IF isStruct EQ 1 THEN $																												; If data is a structure
+  tmp = DICTIONARY(data, /EXTRACT) $																					; Convert it to a dictionary in tmp variable
+ELSE $																																				; Else, assume is dictionary
+  tmp = RECURSIVE_COPY( data )																								; Recursviely copy the dictionary to tmp variable
 
-FOREACH var, data.VARIABLES DO BEGIN																					; Iterate over all variables
+FOREACH var, tmp.VARIABLES DO BEGIN																						; Iterate over all variables
   id = WHERE(var.DIM EQ tid, cnt)																							; Locate time dimension in the variable
   IF cnt EQ 1 THEN BEGIN																											; If variable contains time dimension
     CASE id[0] OF																															; Case for which dimension to filter over
@@ -52,16 +55,16 @@ FOREACH var, data.VARIABLES DO BEGIN																					; Iterate over all vari
   ENDIF
 ENDFOREACH																																		; End iteration over variables
 
-data.VARIABLES.TIME['JULDAY'] = NUM2DATE(data.VARIABLES.TIME.VALUES, data.VARIABLES.TIME.UNITS); Update JULDAY tag
+tmp.VARIABLES.TIME['JULDAY'] = NUM2DATE(tmp.VARIABLES.TIME.VALUES, tmp.VARIABLES.TIME.UNITS); Update JULDAY tag
 
-JUL2GREG, data.VARIABLES.TIME.JULDAY, mm, dd, yy, hr													; Get month, day, year, hour
-data.VARIABLES.TIME['YEAR' ] = yy																							; Update year list
-data.VARIABLES.TIME['MONTH'] = mm
-data.VARIABLES.TIME['DAY'  ] = dd
-data.VARIABLES.TIME['HOUR' ] = hr
+JUL2GREG, tmp.VARIABLES.TIME.JULDAY, mm, dd, yy, hr														; Get month, day, year, hour
+tmp.VARIABLES.TIME['YEAR' ] = yy																							; Update year list
+tmp.VARIABLES.TIME['MONTH'] = mm
+tmp.VARIABLES.TIME['DAY'  ] = dd
+tmp.VARIABLES.TIME['HOUR' ] = hr
 
-IF isStruct EQ 1 THEN data = data.ToStruct(/No_Copy, /RECURSIVE)							; If input was structure, convert dictionary back to structure
+IF isStruct EQ 1 THEN tmp = tmp.ToStruct(/No_Copy, /RECURSIVE)								; If input was structure, convert dictionary back to structure
 
-RETURN, data																																	; Return filtered data
+RETURN, tmp																																		; Return filtered data
 
 END
