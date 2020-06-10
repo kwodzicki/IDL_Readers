@@ -1,0 +1,58 @@
+{
+	"time" : {
+    "long_name"    : "time",
+		"description"  : "Minutes since midnight GMT. Fractional hour of day GMT",
+    "units"        : "hours",
+    "scale_factor" : 0.1,
+		"add_offset"   : 0.0,
+    "valid_range"  : [0.0, 24.0],
+		"no_data"      : "no data"},
+	"sst"  : {
+    "long_name"    : "sea surface temperature",
+    "description"  : "Temperature of top layer (skin) of water ~1 mm thick",
+    "units"        : "C",
+    "scale_factor" :  0.15,
+    "add_offset"   : -3.0,
+    "valid_range"  : [-3.0, 34.5],
+    "no_data"      : "high winds (>20 m/s), sun glint, rain, RFI, near sea ice or land (~75 km)"},
+  "w11" : {
+    "long_name"    : "wspd_lf 10-m wind speed",
+    "description"  : "Wind speed using 10.7 GHz channel",
+    "units"        : "m s**-1",
+    "scale_factor" : 0.2,
+    "add_offset"   : 0.0,
+    "valid_range"  : [0.0, 50.0],
+    "no_data"      : "sun glint, rain, RFI, near sea ice or land (~50 km)"},
+  "w37" : {
+    "long_name"    : "wspd_mf 10-m wind speed",
+    "description"  : "Wind speed using 18.7 GHz channel",
+    "units"        : "m s**-1",
+    "scale_factor" : 0.2,
+    "add_offset"   : 0.0,
+    "valid_range"  : [0.0, 50.0],
+    "no_data"      : "sun glint, rain, RFI, near sea ice or land (~50 km)"},
+  "vapor" : {
+    "long_name"    : "Columnar atmospheric water vapor",
+    "description"  : "Total gaseous water contained in a vertical column of atmosphere",
+    "units"        : "mm",
+    "scale_factor" : 0.3,
+    "add_offset"   : 0.0,
+    "valid_range"  : [0.0, 75.0],
+    "no_data"      : "heavy rain, sea ice or near land (~25 km)"},
+  "cloud" : {
+    "long_name"    : "Columnar cloud liquid water",
+    "description"  : "Total cloud liquid water contained in a vertical column of atmosphere",
+    "units"        : "mm",
+    "scale_factor" :  0.01,
+    "add_offset"   : -0.05,
+    "valid_range"  : [-0.05, 2.45],
+    "no_data"      : "near sea ice or near land (~25 km)"},
+  "rain" : {
+    "long_name"    : "rain rate",
+    "description"  : "Rate of liquid water precipitation",
+    "units"        : "mm/hr",
+    "scale_factor" : 0.1,
+    "add_offset"   : 0.0,
+    "valid_range"  : [0.0, 25.],
+    "no_data"      : "near sea ice or near land (~25 km)"}
+}

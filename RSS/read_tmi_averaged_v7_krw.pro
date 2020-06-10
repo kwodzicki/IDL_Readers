@@ -3,7 +3,8 @@ FUNCTION READ_TMI_AVERAGED_V7_KRW, filename, $
 		NO_LAND		= no_land, $
 		NO_GOM		= no_gom, $
 		LIMIT			= limit, $
-		RRDAY			= rrday
+		RRDAY			= rrday, $
+    AS_STRUCT = as_struct
 ;+
 ; this routine will read the TMI time_averaged bytemap files (version-7.1 released January 2015).
 ; The  3-day, weekly and monthly data files all have the same format.
@@ -44,6 +45,13 @@ exist = FINDFILE(filename, COUNT=cnt)
 IF (cnt NE 1) THEN $
 	MESSAGE, 'FILE DOES NOT EXIST or MORE THAN ONE FILE EXISTS!!'
 
+
+IF N_ELEMENTS(as_struct) EQ 0 THEN as_struct = 1B
+IF N_ELEMENTS(no_land)   EQ 0 THEN no_land   = 1B
+
+json    = FILEPATH('filefmt_v7.json', ROOT_DIR=FILE_DIRNAME(ROUTINE_FILEPATH()))
+data    = JSON_PARSE( json, /DICTIONARY )
+
 nx      = 1440
 ny      =  720
 nvars   =    6
@@ -53,8 +61,8 @@ yOffset =   90.125
 binary  = BYTARR(nx, ny, nvars)
 
 ; multipliers to change binary data to real data
-scale  = [ 0.15, 0.2, 0.2, 0.3,  0.01, 0.1]
-offset = [-3.00, 0.0, 0.0, 0.0, -0.05, 0.0]
+;scale  = [ 0.15, 0.2, 0.2, 0.3,  0.01, 0.1]
+;offset = [-3.00, 0.0, 0.0, 0.0, -0.05, 0.0]
 
 ;open file, read binary data, close file
 CLOSE, 2
@@ -69,7 +77,7 @@ ENDELSE
 IF N_ELEMENTS(variables) EQ 0 THEN $
  	variables = ['SST', 'W11', 'W37', 'VAPOR', 'CLOUD', 'RAIN'] $
 ELSE $
-	FOR i = 0, N_ELEMENTS(variables[i])-1 DO $
+	FOR i = 0, N_ELEMENTS(variables)-1 DO $
 		variables[i] = STRUPCASE(variables[i])
 
 ;Create latitude and longitude and shift
@@ -113,28 +121,41 @@ ELSE $
 	bad = WHERE(binary GT 250, bad_CNT)
 
 binary = FLOAT(binary)                                                          ; Convert binary to float
-IF bad_CNT GT 0 THEN binary[bad] = !VALUES.F_NaN											          ; Replace bad values with NaN
-FOR i = 0, 5 DO binary[0,0,i] = binary[*,*,i] * scale[i] + offset[i]
-IF KEYWORD_SET(rrday) THEN binary[*,*,-1] *= 24
+IF bad_CNT GT 0 THEN BEGIN
+  binary      = FLOAT(binary)
+  binary[bad] = !VALUES.F_NaN											          ; Replace bad values with NaN
+ENDIF
 
 IF land_CNT GT 0 THEN binary[land] = 255.0
 
-out_data = {}																									       			;Initialize out_data Struct
 FOR i = 0, N_ELEMENTS(variables)-1 DO $												     ;Iterate over variables
 	CASE variables[i] OF											
-		'SST'		: out_data = CREATE_STRUCT(out_data, variables[i], binary[*,*,0])
-		'W11'		: out_data = CREATE_STRUCT(out_data, variables[i], binary[*,*,1])
-		'W37'		: out_data = CREATE_STRUCT(out_data, variables[i], binary[*,*,2])
-		'VAPOR'	: out_data = CREATE_STRUCT(out_data, variables[i], binary[*,*,3])
-		'CLOUD'	: out_data = CREATE_STRUCT(out_data, variables[i], binary[*,*,4])
-		'RAIN'	: out_data = CREATE_STRUCT(out_data, variables[i], binary[*,*,5])
+		'SST'		: data['SST',   'VALUES'] = binary[*,*,0]
+		'W11'		: data['W11',   'VALUES'] = binary[*,*,1]
+		'W37'		: data['W37',   'VALUES'] = binary[*,*,2]
+		'VAPOR'	: data['VAPOR', 'VALUES'] = binary[*,*,3]
+		'CLOUD'	: data['CLOUD', 'VALUES'] = binary[*,*,4]
+		'RAIN'	: data['RAIN',  'VALUES'] = binary[*,*,5]
 		ELSE	: MESSAGE, 'Input variables(s) INVALID!'
 	ENDCASE
-	
+
+FOREACH key, data.KEYS() DO $
+  IF data[key].HasKey('VALUES') THEN $
+    data[key,'VALUES'] = data[key, 'VALUES'] * data[key, 'SCALE_FACTOR'] + $
+                         data[key, 'ADD_OFFSET'] $
+  ELSE $
+    data.REMOVE, key
+
+IF KEYWORD_SET(rrday) THEN data['RAIN','VALUES'] *= 24
 
 IF (NOT STRMATCH(filename, '*REGRID*')) THEN BEGIN										;If filename does NOT contain 'REGRID', add lat/lon
-	out_data = CREATE_STRUCT(out_data, 'LAT', lat, 'LON', lon)					;Append lat and lon data
+	data['LAT'] = DICTIONARY('VALUES', lat)
+  data['LON'] = DICTIONARY('VALUES', lon)					;Append lat and lon data
 ENDIF
 
-RETURN, out_data
+IF KEYWORD_SET(as_struct) THEN $
+  RETURN, data.ToStruct(/Recursive, /No_Copy) $
+ELSE $
+  RETURN, data
+
 END
