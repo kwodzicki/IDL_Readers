@@ -15,6 +15,8 @@ FUNCTION NUM2DATE, dates, units
 
 COMPILE_OPT IDL2
 
+IF units.TYPECODE EQ 1 THEN units = STRING(units)
+
 tmp = STRSPLIT(units, ' ', /EXTRACT)																					; Split units on space
 CASE STRLOWCASE(tmp[0]) OF																										; Check first value for units
   'hours'   : new_dates = dates /    24.0D0																		; If hours, divide dates by 24 hr/day

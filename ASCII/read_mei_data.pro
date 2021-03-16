@@ -23,7 +23,8 @@ FUNCTION READ_MEI_DATA, start_date, end_date
 ;-
   COMPILE_OPT IDL2
 
-  data = READ_ASCII('/Volumes/flood3/MEI_Data.txt')
+  file = FILEPATH('MEI_Data.txt', ROOT_DIR=!TELECONNECTION_Data)
+  data = READ_ASCII(file)
   dims = SIZE(data.(0), /DIMENSIONS)
 
   mei = [] & year = [] & month = []

@@ -20,7 +20,7 @@ COMPILE_OPT IDL2
 IF N_ELEMENTS(precision) EQ 0 THEN precision = 1.0D0													; Set precision to 1 second by default
 precision /= 86400.D0																													; Convert to julday units (per day)
  
-tid = data.DIMENSIONS.TIME.ID																									; Get time dimension number from netCDF file
+tid = data.DIMENSIONS['time'].ID																									; Get time dimension number from netCDF file
 ids = []																																			; Initialize list of indices to filter by
 FOR i = 0, N_ELEMENTS(times)-1 DO BEGIN																				; Iterate over all times
   dt = MIN( ABS(data.VARIABLES.TIME.JULDAY - times[i]), id )									; Compute difference between data times and requested time, take absolute value, then get minimum difference and index of minimum

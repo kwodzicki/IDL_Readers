@@ -2,7 +2,8 @@ FUNCTION READ_HDF4, filename, $
   VARIABLES   = variables,  $
   SCALE_DATA  = scale_data, $
   ADD_FIRST   = add_first,  $
-  CONVERT_LON = convert_lon
+  CONVERT_LON = convert_lon, $
+  AS_STRUCT   = as_struct
 
 ;+
 ; Name:
@@ -39,11 +40,12 @@ IF FILE_TEST(filename[0]) EQ 0 THEN $
   IF NOT STRMATCH(filename[0], '*http*', /FOLD_CASE) THEN $                     ; Check if NOT URL
     MESSAGE, 'FILE NOT FOUND!'                                                  ; Error if file NOT exist
 
-IF N_ELEMENTS(scale_data) EQ 0 THEN scale_data = 1
+IF N_ELEMENTS(scale_data) EQ 0 THEN scale_data = 1B
+IF N_ELEMENTS(as_struct)  EQ 0 THEN as_struct  = 1B
 
 ;out_data = {filename: filename}                                                ; Store file name in structure
-out_data = { }                                                                  ; Store file name in structure
-splt     = '!@#$%^&*+=;:,./?()[]{}<>'                                           ; Characters not allowed in structure tags
+out_data = ORDEREDHASH()
+;splt     = '!@#$%^&*+=;:,./?()[]{}<>'                                           ; Characters not allowed in structure tags
 sds_file_ID = HDF_SD_START(filename[0], /READ)                                  ; Open file for reading
 HDF_SD_FILEINFO, sds_file_ID, numSDS, numATT                                    ; Get number of SD data sets
 
@@ -72,7 +74,7 @@ FOR i = 0, numSDS - 1 DO BEGIN                                                  
     _miss  = !NULL                                                              ; Variable to store missing value if found
     _scale = !NULL                                                              ; Variable to store scale factor if found
     _add   = !NULL                                                              ; Variable to store add offset if found
-    tmp    = {}                                                                 ; Set up temporary array to store all data information
+    tmp    = ORDEREDHASH()                                                                 ; Set up temporary array to store all data information
     HDF_SD_GETDATA, sds_id, data
     IF (name EQ 'LON')  AND KEYWORD_SET(convert_lon) THEN BEGIN                 ; If data set is Longitude
       IF (MIN(data, /NaN) LT 0) THEN BEGIN
@@ -95,11 +97,11 @@ FOR i = 0, numSDS - 1 DO BEGIN                                                  
         ELSE            : ; Do nothing
       ENDCASE
 
-      attr_name = STRJOIN( STRSPLIT(attr_name, splt, /EXTRACT), '_' )           ; Split name on bad characters and join using underscore
+      ;attr_name = STRJOIN( STRSPLIT(attr_name, splt, /EXTRACT), '_' )           ; Split name on bad characters and join using underscore
       IF (N_ELEMENTS(attr_data) EQ 1) THEN $                                    ; If number of elements is only 1
-        tmp = CREATE_STRUCT(tmp, attr_name, attr_data[0]) $                     ; Append attribute to tmp data structure as scalar
+        tmp[attr_name] = attr_data[0] $                     ; Append attribute to tmp data structure as scalar
       ELSE $                                                                    ; Else
-        tmp = CREATE_STRUCT(tmp, attr_name, attr_data)                          ; Append attribute to tmp data structure as array
+        tmp[attr_name] = attr_data                          ; Append attribute to tmp data structure as array
   	ENDFOR                                                                      ; END k
 
     ;=== Data scaling
@@ -130,19 +132,22 @@ FOR i = 0, numSDS - 1 DO BEGIN                                                  
       ENDIF
     ENDIF
 
-    tmp  = CREATE_STRUCT(tmp, 'Values', data)                                   ; Append actual data to tmp data structure
+    tmp['values'] = data                                   ; Append actual data to tmp data structure
 
     ;=== Filter out characters from tag name
-    name = STRJOIN(STRSPLIT(name, ':', /EXTRACT), '_')                          ; Skip variables with colon in the name
-    name = STRJOIN(STRSPLIT(name, ' ', /EXTRACT), '_')
-    name = STRJOIN(STRSPLIT(name, '.', /EXTRACT), '_')
-    name = STRJOIN(STRSPLIT(name, '#', /EXTRACT), 'N')
+    ;name = STRJOIN(STRSPLIT(name, ':', /EXTRACT), '_')                          ; Skip variables with colon in the name
+    ;name = STRJOIN(STRSPLIT(name, ' ', /EXTRACT), '_')
+    ;name = STRJOIN(STRSPLIT(name, '.', /EXTRACT), '_')
+    ;name = STRJOIN(STRSPLIT(name, '#', /EXTRACT), 'N')
 
-    out_data = CREATE_STRUCT(out_data, name, tmp)                               ; Add data to structure
+    out_data[name] = tmp
   ENDFOR                                                                        ; END j
   HDF_SD_ENDACCESS, sds_id                                                      ; End access to ith data set
 ENDFOR                                                                          ; END i
 HDF_SD_END, sds_file_ID                                                         ; Close the file
+
+IF KEYWORD_SET(as_struct) THEN $
+  RETURN, out_data.ToStruct(/RECURSIVE)
 
 RETURN, out_data                                                                ; Return data structure
 

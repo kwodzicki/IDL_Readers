@@ -129,7 +129,7 @@ lonOffset =   1.25
 
 latbins   = REVERSE( FINDGEN(nLat) * dLat + latOffset )                       ; Latitude points for data
 lonbins   =          FINDGEN(nLon) * dLon + lonOffset                         ; Longitude points for data
-  
+
 IF (N_ELEMENTS(limit) NE 0) THEN BEGIN                                ;If limits set, filter data based on domain
   lon_id = WHERE(lonbins GE limit[1] AND lonbins LE limit[3], lon_CNT)
   lat_id = WHERE(latbins GE limit[0] AND latbins LE limit[2], lat_CNT)
@@ -141,10 +141,16 @@ IF (lon_CNT NE 0 AND lat_cnt NE 0) THEN BEGIN                         ;If counts
   lonbins = lonbins[lon_id] & latbins = latbins[lat_id]
 ENDIF
 
-files = FILE_SEARCH(dir, 'gpcp_v2.2_psg.*')                           ;Find all data files in directory
+CASE version OF
+  'V2.2' : pattern = 'gpcp_v2.2_psg.*'
+  'V2.3' : pattern = 'gpcp_cdr_v23rB1*.nc'
+  ELSE   : MESSAGE, 'Unsupported version'
+ENDCASE
+
+files = FILE_SEARCH(dir, pattern)                           ;Find all data files in directory
 IF (N_ELEMENTS(in_year) NE 0 AND in_year NE 0) THEN BEGIN
   id = WHERE(STRMATCH(files,'*'+STRTRIM(in_year,2)+'*',/FOLD_CASE),CNT)
-  IF (CNT EQ 1) THEN files = files[id] ELSE BEGIN 
+  IF (CNT GE 1) THEN files = files[id] ELSE BEGIN 
     MESSAGE, 'File NOT found! Skipping...', /CONTINUE
     RETURN, -1
   ENDELSE

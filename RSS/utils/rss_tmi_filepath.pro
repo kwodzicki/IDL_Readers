@@ -7,12 +7,13 @@ COMPILE_OPT IDL2
 
 IF N_PARAMS() LT 2 THEN MESSAGE, 'Must input at least year and month'
 IF N_ELEMENTS(rootdir) EQ 0 THEN rootdir = !RSS_Data
-IF N_ELEMENTS(version) EQ 0 THEN version = '7.1'
+IF N_ELEMENTS(version) EQ 0 THEN version = 7.1
 
-versDir  = 'v' + ( STRSPLIT(version, '.', /EXTRACT) )[0]
+versDir  = STRING(version, FORMAT="('bmaps_v',F04.1)")
+; + ( STRSPLIT(version, '.', /EXTRACT) )[0]
 yearDir  = STRING(year,    FORMAT="('y', I4)")
 monthDir = STRING(month,   FORMAT="('m', I02)")
-subDirs  = ['TMI', versDir, yearDir, monthDir]
+subDirs  = ['tmi', versDir, yearDir, monthDir]
 
 IF N_PARAMS() EQ 3 THEN BEGIN
   IF KEYWORD_SET(d3d) THEN $

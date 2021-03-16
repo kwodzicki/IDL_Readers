@@ -53,6 +53,6 @@
     "units"        : "mm/hr",
     "scale_factor" : 0.1,
     "add_offset"   : 0.0,
-    "valid_range"  : [0.0, 25.],
+    "valid_range"  : [0.0, 25.0],
     "no_data"      : "near sea ice or near land (~25 km)"}
 }
