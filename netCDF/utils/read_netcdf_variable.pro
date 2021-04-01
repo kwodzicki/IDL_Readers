@@ -38,34 +38,39 @@ var_data = GET_ATTRIBUTES(iid, vid, FLOAT = float)
 
 NCDF_VARGET, iid, vid, data, _EXTRA = _extra
 
+
 IF STRMATCH(var_data.NAME, 'TIME', /FOLD_CASE) THEN BEGIN
- IF var_data.HasKey('UNITS') THEN $
-  julDate = var_data.HasKey('UNITS') ? NUM2DATE(data, var_data.UNITS) : data
-  JUL2GREG, juldate, mm, dd, yy,  hr																					; Convert the julian date
-  ;  Add the year, month, day, hour information to the dictionary
+  replace_id = NCDF_BADVALS(data, var_data) 
+  julDate    = var_data.HasKey('UNITS') ? NUM2DATE(data, var_data.UNITS) : data
+  IF (N_ELEMENTS(replace_id) GT 0) THEN BEGIN
+    type = SIZE(julDate, /TYPE)
+    IF ((type LT 4) OR (type GT 6)) AND (type NE 9) THEN julDate = FLOAT(julDate)
+    julDate[replace_id] = !Values.F_NaN
+  ENDIF
+  
+  index   = WHERE( FINITE(juldate), cnt )
+  IF cnt NE julDate.LENGTH THEN BEGIN
+    yy = MAKE_ARRAY(julDate.LENGTH, VALUE=!Values.F_NaN)
+    mm = MAKE_ARRAY(julDate.LENGTH, VALUE=!Values.F_NaN)
+    dd = MAKE_ARRAY(julDate.LENGTH, VALUE=!Values.F_NaN)
+    hr = MAKE_ARRAY(julDate.LENGTH, VALUE=!Values.F_NaN)
+    IF cnt GT 0 THEN BEGIN
+      JUL2GREG, juldate[index], month, day, year, hour											    ; Convert the julian date
+      yy[index] = year
+      mm[index] = month
+      dd[index] = day
+      hr[index] = hour
+    ENDIF
+  ENDIF ELSE $
+    JUL2GREG, juldate, mm, dd, yy, hr											                    ; Convert the julian date
+
   var_data['Year'  ] = yy
   var_data['Month' ] = mm             
   var_data['Day'   ] = dd
   var_data['Hour'  ] = hr
   var_data['JULDAY'] = juldate
 ENDIF ELSE IF KEYWORD_SET(scale_data) THEN BEGIN                              ; Scale the data if the keyword is set
-  replace_id = LIST()
-  IF var_data.HasKey('_FillValue') THEN BEGIN																	; If _fillvalue in dictionary
-    id = WHERE(data EQ var_data['_FillValue'], cnt)														; Locate fill values
-    IF (CNT GT 0) THEN replace_id.ADD, id																			; If values located, then append indices to replace_ids list
-  ENDIF
-
-  IF var_data.HasKey('missing_value') THEN BEGIN															; If missing_value in the dictionary
-    id = WHERE(data EQ var_data['missing_value'], CNT)												; Locate missing values
-    IF (CNT GT 0) THEN replace_id.ADD, id																			; If values located, then append indices to replace_ids list
-  ENDIF
-
-  IF var_data.HasKey('valid_range') THEN BEGIN																; If valide_range key is in the dictionary
-    id = WHERE(data LT var_data['valid_range', 0] OR $												; Locate values outside of range
-               data GT var_data['valid_range', 1], CNT)
-    IF (CNT GT 0) THEN replace_id.ADD, id																			; If values located, then append indices to replace_ids list 
-  ENDIF
-
+  replace_id = NCDF_BADVALS(data, var_data) 
   IF KEYWORD_SET(add_first) THEN BEGIN																				; If add first is set
     IF var_data.HasKey('add_offset') THEN $																		; Offset the data IF an offset was read in
       data = TEMPORARY(data) - var_data['add_offset']
@@ -80,7 +85,6 @@ ENDIF ELSE IF KEYWORD_SET(scale_data) THEN BEGIN                              ; 
 
   ;=== Replace invalid data if any present
   IF (N_ELEMENTS(replace_id) GT 0) THEN BEGIN
-    replace_id = replace_id.ToArray(DIMENSION=1, /No_Copy)										; Convert list to array
     type = SIZE(data, /TYPE)
     IF ((type LT 4) OR (type GT 6)) AND (type NE 9) THEN data = FLOAT(data)
     data[replace_id] = !Values.F_NaN
